@@ -1,6 +1,8 @@
 {
   "dependencies": {
-    "nativewind": "^4.1.23",
+    "nativewind": "^4.1.23"
+  },
+  "devDependencies": {
     "tailwindcss": "^3.4.17"
   }
 }
