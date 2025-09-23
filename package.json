@@ -6,7 +6,8 @@
     "@types/react": "^19.1.13",
     "constants": "^0.0.2",
     "expo-constants": "^18.0.8",
-    "nativewind": "^4.1.23"
+    "nativewind": "^4.1.23",
+    "supabase": "^2.45.5"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.17"
