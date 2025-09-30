@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { serve } from "https://deno.land/x/sift/mod.ts";
 
 const supabase = createClient(
@@ -20,7 +20,7 @@ serve(async (req) => {
     // Fetch RSVP counts grouped by status
     const { data, error } = await supabase
       .from("rsvps")
-      .select("status, count(*)")
+      .select("status, count(*)", { count: "exact" }) // count(*) is correct for supabase-js v2
       .eq("game_id", Number(gameId))
       .group("status");
 

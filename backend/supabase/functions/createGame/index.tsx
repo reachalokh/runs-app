@@ -1,9 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { serve } from "https://deno.land/x/sift/mod.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")! // Use service role key for server-side operations
 );
 
 serve(async (req) => {
@@ -20,32 +20,54 @@ serve(async (req) => {
     }
 
     // Validate host exists
-    const { data: hostData, error: hostError } = await supabase.from("players").select("*").eq("player_id", host_id).single();
+    const { data: hostData, error: hostError } = await supabase
+      .from("players")
+      .select("*")
+      .eq("player_id", host_id)
+      .single();
+
     if (hostError || !hostData) {
       return new Response(JSON.stringify({ error: "Host not found" }), { status: 400 });
     }
 
     // Validate court exists
-    const { data: courtData, error: courtError } = await supabase.from("courts").select("*").eq("court_id", court_id).single();
+    const { data: courtData, error: courtError } = await supabase
+      .from("courts")
+      .select("*")
+      .eq("court_id", court_id)
+      .single();
+
     if (courtError || !courtData) {
       return new Response(JSON.stringify({ error: "Court not found" }), { status: 400 });
     }
 
     // Insert new game
-    const { data: gameData, error: insertError } = await supabase.from("pickup_games").insert({
-      host_id,
-      court_id,
-      game_date,
-      game_time,
-      players_needed,
-      skill_level,
-      notes
-    }).select().single();
+    const { data: gameData, error: insertError } = await supabase
+      .from("pickup_games")
+      .insert({
+        host_id,
+        court_id,
+        game_date,
+        game_time,
+        players_needed,
+        skill_level,
+        notes
+      })
+      .select()
+      .single();
 
-    if (insertError) return new Response(JSON.stringify({ error: insertError.message }), { status: 500 });
+    if (insertError || !gameData) {
+      return new Response(JSON.stringify({ error: insertError?.message || "Failed to create game" }), { status: 500 });
+    }
 
     // Automatically RSVP host as confirmed
-    await supabase.from("rsvps").insert({ game_id: gameData.game_id, player_id: host_id, status: "confirmed" });
+    const { error: rsvpError } = await supabase
+      .from("rsvps")
+      .insert({ game_id: gameData.game_id, player_id: host_id, status: "confirmed" });
+
+    if (rsvpError) {
+      return new Response(JSON.stringify({ error: rsvpError.message }), { status: 500 });
+    }
 
     return new Response(JSON.stringify(gameData), { status: 201 });
   } catch (err) {

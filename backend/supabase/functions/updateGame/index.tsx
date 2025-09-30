@@ -1,5 +1,5 @@
 // supabase/functions/updateGame/index.ts
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { serve } from "https://deno.land/x/sift/mod.ts";
 
 const SUPA_URL = Deno.env.get("SUPABASE_URL")!;
