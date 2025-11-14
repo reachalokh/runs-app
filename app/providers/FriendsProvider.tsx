@@ -1,6 +1,7 @@
+import { MOCK_PLAYERS } from "@/constants/mockData";
+import { getPlayerGames, playerSearch } from "@/lib/api";
 import createContextHook from "@nkzw/create-context-hook";
 import { useState } from "react";
-import { MOCK_PLAYERS } from "@/constants/mockData";
 
 export const [FriendsProvider, useFriends] = createContextHook(() => {
   const [friends, setFriends] = useState(MOCK_PLAYERS.slice(0, 3));
@@ -31,6 +32,36 @@ export const [FriendsProvider, useFriends] = createContextHook(() => {
     setFriendRequests(friendRequests.filter((r) => r.id !== requestId));
   };
 
+  // Search players via Supabase function; falls back to empty array when unavailable
+  const searchPlayers = async (query: string, limit = 10) => {
+    try {
+      const { data, error } = await playerSearch(query, limit);
+      if (error || !data) return [];
+      // api returns { results: [...] } per functions in the backend
+      const results = data.results || [];
+      return results.map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        profileImage: p.profile_image || '',
+      }));
+    } catch (e) {
+      console.warn('playerSearch error', e);
+      return [];
+    }
+  };
+
+  // Fetch games for a player (wrapper around getPlayerGames)
+  const fetchPlayerGames = async (playerId?: number, upcoming?: boolean) => {
+    try {
+      const { data, error } = await getPlayerGames(playerId, upcoming, false);
+      if (error || !data) return [];
+      return data.results || [];
+    } catch (e) {
+      console.warn('getPlayerGames error', e);
+      return [];
+    }
+  };
+
   return {
     friends,
     friendRequests,
@@ -39,5 +70,7 @@ export const [FriendsProvider, useFriends] = createContextHook(() => {
     sendFriendRequest,
     acceptRequest,
     rejectRequest,
+    searchPlayers,
+    fetchPlayerGames,
   };
 });

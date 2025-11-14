@@ -1,25 +1,46 @@
+import { useFriends } from "@/providers/FriendsProvider";
+import { router } from "expo-router";
+import { Check, Search, UserPlus, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  TextInput,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { router } from "expo-router";
-import { useFriends } from "@/providers/FriendsProvider";
-import { Search, UserPlus, Check, X } from "lucide-react-native";
 
 export default function FriendsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
   const { friends, friendRequests, acceptRequest, rejectRequest } = useFriends();
+  const { searchPlayers } = useFriends() as any;
+  const [searchResults, setSearchResults] = React.useState<any[] | null>(null);
 
   const filteredFriends = friends.filter((friend) =>
     friend.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        setSearchResults(null);
+        return;
+      }
+      if (!searchPlayers) return;
+      const results = await searchPlayers(searchQuery, 10);
+      if (cancelled) return;
+      setSearchResults(results || []);
+    };
+    const t = setTimeout(run, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [searchQuery, searchPlayers]);
 
   const renderFriend = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -99,7 +120,7 @@ export default function FriendsScreen() {
 
       {activeTab === "friends" ? (
         <FlatList
-          data={filteredFriends}
+          data={searchResults !== null ? searchResults : filteredFriends}
           renderItem={renderFriend}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
