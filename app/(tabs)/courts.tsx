@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Platform,
-  Dimensions,
-} from "react-native";
-import { router } from "expo-router";
 import { useCourts } from "@/providers/CourtsProvider";
 import { useLocation } from "@/providers/LocationProvider";
-import { MapPin, Users, Navigation } from "lucide-react-native";
+import { router } from "expo-router";
+import { MapPin, Navigation, Users } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -118,6 +117,9 @@ export default function CourtsScreen() {
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const { courts, loading } = useCourts();
   const { location } = useLocation();
+  // optional provider method added to fetch real courts from backend
+  const provider = useCourts() as any;
+  const fetchNearbyCourts = provider?.fetchNearbyCourts;
 
   const renderCourtCard = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -154,6 +156,18 @@ export default function CourtsScreen() {
       </View>
     );
   }
+
+    // fetch from backend when we have a location
+    React.useEffect(() => {
+      let cancelled = false;
+      const load = async () => {
+        if (!location || !fetchNearbyCourts) return;
+        await fetchNearbyCourts(location.latitude, location.longitude, 10, 50);
+        if (cancelled) return;
+      };
+      load();
+      return () => { cancelled = true; };
+    }, [location, fetchNearbyCourts]);
 
   return (
     <View style={styles.container}>
